@@ -1,597 +1,257 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import NoteContext from '../context/notes/NoteContext';
 import Noteitem from './NoteItem';
 import { useNavigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
 
-const Notes = () => {
+const Notes = ({ showAlert }) => {
   const context = useContext(NoteContext);
-  const { notes, getNotes, addNote, editNote, filteredNotes } = context;
+  const { notes, getNotes, addNote, editNote } = context;
   const navigate = useNavigate();
 
-  // States for modals
-  const [note, setNote] = useState({ id: '', etitle: '', edescription: '', etag: '' });
-  const [newNote, setNewNote] = useState({ title: '', description: '', tag: '' });
-  const [viewNoteData, setViewNoteData] = useState(null);
+  // Folders: {id, name, noteIds[]}
+  const [folders, setFolders] = useState([
+    { id: 'folder-default', name: 'General', noteIds: [] },
+  ]);
+  const [folderName, setFolderName] = useState('');
+  const [editingFolder, setEditingFolder] = useState(null);
+  const [editingFolderName, setEditingFolderName] = useState('');
 
-  // Modal trigger refs
-  const refEdit = useRef(null);
-  const refCloseEdit = useRef(null);
-  const refAdd = useRef(null);
-  const refCloseAdd = useRef(null);
-  const refView = useRef(null);
-  const refCloseView = useRef(null);
+  // Add Note form state
+  const [newNote, setNewNote] = useState({ title: '', description: '', tag: '' });
+
+  // Drag & drop state
+  const [draggedNoteId, setDraggedNoteId] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-    } else {
-      getNotes();
+    if (!token) navigate('/login');
+    else getNotes();
+  }, [getNotes, navigate]);
+
+  // When notes change, initialize folder notes if empty
+  useEffect(() => {
+    if (folders.length === 1 && folders[0].noteIds.length === 0 && notes.length > 0) {
+      setFolders([{ id: 'folder-default', name: 'General', noteIds: notes.map(n => n._id) }]);
     }
-  }, []);
+  }, [notes]);
 
-  // Open edit modal and populate fields
-  const updateNote = (currentNote) => {
-    refEdit.current.click();
-    setNote({
-      id: currentNote._id,
-      etitle: currentNote.title,
-      edescription: currentNote.description,
-      etag: currentNote.tag,
-    });
+  // Folder CRUD functions
+  const createFolder = () => {
+    if (!folderName.trim()) return;
+    setFolders([...folders, { id: uuidv4(), name: folderName.trim(), noteIds: [] }]);
+    setFolderName('');
+    showAlert('Folder created', 'success');
   };
 
-  // Open view modal and show note data
-  const viewNote = (currentNote) => {
-    setViewNoteData(currentNote);
-    refView.current.click();
+  const deleteFolder = (folderId) => {
+    if (window.confirm('Delete folder? Notes inside will be moved to General folder.')) {
+      const generalFolderIndex = folders.findIndex(f => f.id === 'folder-default');
+      const deletedFolder = folders.find(f => f.id === folderId);
+      const updatedFolders = folders.filter(f => f.id !== folderId);
+
+      updatedFolders[generalFolderIndex].noteIds = [
+        ...updatedFolders[generalFolderIndex].noteIds,
+        ...deletedFolder.noteIds,
+      ];
+
+      setFolders(updatedFolders);
+      showAlert('Folder deleted', 'info');
+    }
   };
 
-  // Handle updating the note
-  const handleUpdate = () => {
-    editNote(note.id, note.etitle, note.edescription, note.etag);
-    refCloseEdit.current.click();
+  const startRenameFolder = (folderId, currentName) => {
+    setEditingFolder(folderId);
+    setEditingFolderName(currentName);
   };
 
-  // Handle adding new note
-  const handleAdd = () => {
-    addNote(newNote.title, newNote.description, newNote.tag);
-    refCloseAdd.current.click();
-    setNewNote({ title: '', description: '', tag: '' });
+  const renameFolder = (folderId) => {
+    if (!editingFolderName.trim()) return;
+    setFolders(folders.map(f => f.id === folderId ? { ...f, name: editingFolderName.trim() } : f));
+    setEditingFolder(null);
+    showAlert('Folder renamed', 'success');
   };
 
-  // Change handlers
-  const onChange = (e) => {
-    setNote({ ...note, [e.target.name]: e.target.value });
+  // Drag & drop handlers
+  const handleDragStart = (e, noteId) => {
+    setDraggedNoteId(noteId);
   };
 
-  const onAddChange = (e) => {
-    setNewNote({ ...newNote, [e.target.name]: e.target.value });
+  const handleDropOnFolder = (e, folderId) => {
+    e.preventDefault();
+    if (!draggedNoteId) return;
+
+    setFolders(folders.map(folder => {
+      // Remove note from all folders
+      const filteredNotes = folder.noteIds.filter(id => id !== draggedNoteId);
+
+      if (folder.id === folderId) {
+        return { ...folder, noteIds: [...filteredNotes, draggedNoteId] };
+      }
+      return { ...folder, noteIds: filteredNotes };
+    }));
+
+    setDraggedNoteId(null);
+    showAlert('Note moved to folder', 'success');
   };
+
+  const handleDragOver = (e) => e.preventDefault();
+
+  // Get note by ID helper
+  const getNoteById = (id) => notes.find(note => note._id === id);
+
+  // Add new note handler
+  const handleAddNote = async () => {
+    if (newNote.title.trim().length < 5 || newNote.description.trim().length < 5) {
+      showAlert('Title and description must be at least 5 characters', 'warning');
+      return;
+    }
+    try {
+      await addNote(newNote.title.trim(), newNote.description.trim(), newNote.tag.trim());
+      // After adding note, assign to General folder (latest note id will be last in notes after addNote)
+      // To keep sync, delay a bit to get new notes list or use callback/promise from addNote if available
+      // Here, just optimistic: add latest note id from notes + 1 or fetch updated notes with getNotes
+      setNewNote({ title: '', description: '', tag: '' });
+      showAlert('Note added successfully', 'success');
+
+      // Re-fetch notes or assume note added last
+      setTimeout(() => {
+        getNotes(); // refresh notes list
+      }, 300);
+
+    } catch (error) {
+      showAlert('Failed to add note', 'danger');
+    }
+  };
+
+  // When notes update, sync folder-default noteIds with current notes in that folder
+  useEffect(() => {
+    // Get all note ids currently assigned in folders (except default)
+    const assignedNoteIds = folders.reduce((acc, folder) => {
+      if (folder.id !== 'folder-default') return acc.concat(folder.noteIds);
+      return acc;
+    }, []);
+    // Unassigned notes go to default folder
+    const unassignedNotes = notes.filter(n => !assignedNoteIds.includes(n._id)).map(n => n._id);
+
+    setFolders(folders.map(folder => {
+      if (folder.id === 'folder-default') {
+        return { ...folder, noteIds: Array.from(new Set([...folder.noteIds, ...unassignedNotes])) };
+      }
+      return folder;
+    }));
+  }, [notes]);
 
   return (
-    <div style={{ maxWidth: '900px', margin: 'auto', padding: '2rem 1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2>Your Notes</h2>
-        <button
-          className='btn btn-primary'
-          onClick={() => refAdd.current.click()}
-          aria-label="Add new note"
-        >
-          + Add Note
-        </button>
-      </div>
+    <div className="container my-4">
+      <h2 className="fw-bold mb-3">Your Notes with Folders</h2>
 
-      {/* Hidden buttons to trigger modals */}
-      <button
-        ref={refEdit}
-        type="button"
-        className="btn btn-primary d-none"
-        data-bs-toggle="modal"
-        data-bs-target="#editNoteModal"
-      >
-        Launch Edit Note Modal
-      </button>
-
-      <button
-        ref={refAdd}
-        type="button"
-        className="btn btn-primary d-none"
-        data-bs-toggle="modal"
-        data-bs-target="#addNoteModal"
-      >
-        Launch Add Note Modal
-      </button>
-
-      <button
-        ref={refView}
-        type="button"
-        className="btn btn-primary d-none"
-        data-bs-toggle="modal"
-        data-bs-target="#viewNoteModal"
-      >
-        Launch View Note Modal
-      </button>
-
-     {/* Add Note Modal */}
-<div
-  className="modal fade"
-  id="addNoteModal"
-  tabIndex="-1"
-  aria-labelledby="addNoteModalLabel"
-  aria-hidden="true"
->
-  <div className="modal-dialog modal-dialog-centered modal-md">
-    <div
-      className="modal-content"
-      style={{
-        borderRadius: '25px',
-        backdropFilter: 'blur(15px)',
-        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-        boxShadow:
-          '0 8px 32px 0 rgba(31, 38, 135, 0.37), 0 0 0 1px rgba(255, 255, 255, 0.18)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      <div
-        className="modal-header"
-        style={{
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-          color: 'white',
-          borderRadius: '25px 25px 0 0',
-          padding: '1.5rem 2rem',
-          fontWeight: '700',
-          fontSize: '1.5rem',
-          letterSpacing: '1.1px',
-          boxShadow: '0 4px 8px rgba(118, 75, 162, 0.5)',
-        }}
-      >
-        <h5 className="modal-title" id="addNoteModalLabel">
-          Add New Note
-        </h5>
+      {/* Add New Note UI */}
+      <div className="card mb-4 p-3 shadow-sm">
+        <h5>Add New Note</h5>
+        <input
+          type="text"
+          placeholder="Title (min 5 chars)"
+          className="form-control mb-2"
+          value={newNote.title}
+          onChange={e => setNewNote({ ...newNote, title: e.target.value })}
+        />
+        <textarea
+          placeholder="Description (min 5 chars)"
+          className="form-control mb-2"
+          rows={3}
+          value={newNote.description}
+          onChange={e => setNewNote({ ...newNote, description: e.target.value })}
+        />
+        <input
+          type="text"
+          placeholder="Tag (optional)"
+          className="form-control mb-2"
+          value={newNote.tag}
+          onChange={e => setNewNote({ ...newNote, tag: e.target.value })}
+        />
         <button
-          type="button"
-          className="btn-close btn-close-white"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-          style={{
-            filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.4))',
-            transition: 'transform 0.2s ease',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-        ></button>
-      </div>
-      <div
-        className="modal-body"
-        style={{
-          padding: '2rem 2.5rem',
-          color: '#444',
-          fontSize: '1rem',
-        }}
-      >
-        <form>
-          <div className="mb-4">
-            <label
-              htmlFor="title"
-              style={{
-                fontWeight: '600',
-                marginBottom: '0.3rem',
-                display: 'block',
-                color: '#5a3eae',
-              }}
-            >
-              Title
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="title"
-              name="title"
-              placeholder="Enter note title"
-              value={newNote.title}
-              onChange={onAddChange}
-              required
-              minLength={5}
-              style={{
-                borderRadius: '12px',
-                border: '1.5px solid #764ba2',
-                padding: '0.6rem 1rem',
-                fontSize: '1rem',
-                boxShadow: 'inset 0 1px 3px rgba(118,75,162,0.2)',
-                transition: 'border-color 0.3s ease',
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = '#667eea')
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = '#764ba2')
-              }
-            />
-          </div>
-          <div className="mb-4">
-            <label
-              htmlFor="description"
-              style={{
-                fontWeight: '600',
-                marginBottom: '0.3rem',
-                display: 'block',
-                color: '#5a3eae',
-              }}
-            >
-              Description
-            </label>
-            <textarea
-              className="form-control"
-              id="description"
-              name="description"
-              placeholder="Enter note description"
-              value={newNote.description}
-              onChange={onAddChange}
-              required
-              minLength={5}
-              rows={5}
-              style={{
-                borderRadius: '12px',
-                border: '1.5px solid #764ba2',
-                padding: '0.8rem 1rem',
-                fontSize: '1rem',
-                boxShadow: 'inset 0 1px 3px rgba(118,75,162,0.2)',
-                transition: 'border-color 0.3s ease',
-                resize: 'vertical',
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = '#667eea')
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = '#764ba2')
-              }
-            ></textarea>
-          </div>
-          <div className="mb-4">
-            <label
-              htmlFor="tag"
-              style={{
-                fontWeight: '600',
-                marginBottom: '0.3rem',
-                display: 'block',
-                color: '#5a3eae',
-              }}
-            >
-              Tag (optional)
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="tag"
-              name="tag"
-              placeholder="Enter tag"
-              value={newNote.tag}
-              onChange={onAddChange}
-              style={{
-                borderRadius: '12px',
-                border: '1.5px solid #764ba2',
-                padding: '0.6rem 1rem',
-                fontSize: '1rem',
-                boxShadow: 'inset 0 1px 3px rgba(118,75,162,0.2)',
-                transition: 'border-color 0.3s ease',
-              }}
-              onFocus={(e) =>
-                (e.currentTarget.style.borderColor = '#667eea')
-              }
-              onBlur={(e) =>
-                (e.currentTarget.style.borderColor = '#764ba2')
-              }
-            />
-          </div>
-        </form>
-      </div>
-      <div
-        className="modal-footer"
-        style={{
-          borderTop: 'none',
-          padding: '1.25rem 2rem',
-          backgroundColor: 'rgba(230, 230, 255, 0.5)',
-          borderRadius: '0 0 25px 25px',
-          justifyContent: 'space-between',
-        }}
-      >
-        <button
-          ref={refCloseAdd}
-          type="button"
-          className="btn btn-outline-secondary"
-          data-bs-dismiss="modal"
-          style={{
-            borderRadius: '50px',
-            fontWeight: '600',
-            padding: '0.5rem 1.8rem',
-            letterSpacing: '0.07em',
-            transition: 'all 0.3s ease',
-            boxShadow: '0 3px 8px rgba(0,0,0,0.1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#5a3eae';
-            e.currentTarget.style.color = '#fff';
-            e.currentTarget.style.boxShadow = '0 6px 12px rgba(90, 62, 174, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '';
-            e.currentTarget.style.color = '';
-            e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1)';
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          disabled={newNote.title.length < 5 || newNote.description.length < 5}
-          onClick={handleAdd}
-          type="button"
           className="btn btn-primary"
-          style={{
-            borderRadius: '50px',
-            fontWeight: '700',
-            padding: '0.6rem 2rem',
-            letterSpacing: '0.1em',
-            background: 'linear-gradient(135deg, #667eea, #764ba2)',
-            border: 'none',
-            boxShadow: '0 5px 15px rgba(118, 75, 162, 0.7)',
-            transition: 'all 0.3s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #764ba2, #667eea)';
-            e.currentTarget.style.boxShadow = '0 8px 20px rgba(118, 75, 162, 0.9)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            e.currentTarget.style.boxShadow = '0 5px 15px rgba(118, 75, 162, 0.7)';
-          }}
+          onClick={handleAddNote}
+          disabled={newNote.title.trim().length < 5 || newNote.description.trim().length < 5}
         >
           Add Note
         </button>
       </div>
-    </div>
-  </div>
-</div>
 
-
-      {/* Edit Note Modal */}
-      <div className="modal fade" id="editNoteModal" tabIndex="-1" aria-labelledby="editNoteModalLabel" aria-hidden="true">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content" style={{ borderRadius: '20px' }}>
-            <div
-              className="modal-header"
-              style={{ background: 'linear-gradient(135deg, #f7971e, #ffd200)', color: '#3b2e00', borderRadius: '20px 20px 0 0' }}
-            >
-              <h5 className="modal-title" id="editNoteModalLabel">Edit Note</h5>
-              <button type="button" className="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <form>
-                <div className="mb-3">
-                  <label htmlFor="etitle">Title</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="etitle"
-                    name="etitle"
-                    placeholder="Title"
-                    value={note.etitle}
-                    onChange={onChange}
-                    required
-                    minLength={5}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="edescription">Description</label>
-                  <textarea
-                    className="form-control"
-                    id="edescription"
-                    name="edescription"
-                    placeholder="Description"
-                    value={note.edescription}
-                    onChange={onChange}
-                    required
-                    minLength={5}
-                    rows={5}
-                  ></textarea>
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="etag">Tag</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="etag"
-                    name="etag"
-                    placeholder="Tag"
-                    value={note.etag}
-                    onChange={onChange}
-                  />
-                </div>
-              </form>
-            </div>
-            <div className="modal-footer">
-              <button
-                ref={refCloseEdit}
-                type="button"
-                className="btn btn-outline-secondary"
-                data-bs-dismiss="modal"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={note.etitle.length < 5 || note.edescription.length < 5}
-                onClick={handleUpdate}
-                type="button"
-                className="btn btn-warning"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Folder creation */}
+      <div className="d-flex mb-4">
+        <input
+          type="text"
+          className="form-control me-2"
+          placeholder="New folder name"
+          value={folderName}
+          onChange={e => setFolderName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') createFolder(); }}
+        />
+        <button className="btn btn-outline-primary" onClick={createFolder}>+ Add Folder</button>
       </div>
 
-      {/* View Note Modal */}
-<div
-  className="modal fade"
-  id="viewNoteModal"
-  tabIndex="-1"
-  aria-labelledby="viewNoteModalLabel"
-  aria-hidden="true"
->
-  <div className="modal-dialog modal-dialog-centered modal-sm">
-    <div
-      className="modal-content shadow-lg"
-      style={{
-        borderRadius: '25px',
-        border: '1px solid #e0e0e0',
-        overflow: 'hidden',
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      }}
-    >
-      <div
-        className="modal-header"
-        style={{
-          background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
-          color: 'white',
-          borderBottom: 'none',
-          padding: '1.25rem 1.5rem',
-          letterSpacing: '1.2px',
-          fontWeight: '600',
-          fontSize: '1.3rem',
-        }}
-      >
-        <h5 className="modal-title" id="viewNoteModalLabel">
-          View Note
-        </h5>
-        <button
-          type="button"
-          className="btn-close btn-close-white"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-          style={{
-            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
-            transition: 'transform 0.2s ease',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.2)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-        ></button>
-      </div>
-      <div
-        className="modal-body"
-        style={{
-          padding: '1.75rem 1.5rem',
-          backgroundColor: '#fafafa',
-          color: '#333',
-          lineHeight: '1.6',
-          fontSize: '1rem',
-          minHeight: '180px',
-        }}
-      >
-        {viewNoteData ? (
-          <>
-            <h4
-              style={{
-                fontWeight: '700',
-                marginBottom: '0.6rem',
-                color: '#2575fc',
-                textTransform: 'capitalize',
-              }}
-            >
-              {viewNoteData.title}
-            </h4>
-            <p
-              style={{
-                whiteSpace: 'pre-wrap',
-                fontSize: '1.05rem',
-                marginBottom: '1.25rem',
-                fontWeight: '500',
-                color: '#555',
-              }}
-            >
-              {viewNoteData.description}
-            </p>
-            <span
-              style={{
-                display: 'inline-block',
-                backgroundColor: '#6a11cb',
-                color: 'white',
-                padding: '6px 14px',
-                borderRadius: '50px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                letterSpacing: '0.05em',
-                userSelect: 'none',
-              }}
-            >
-              {viewNoteData.tag || 'No Tag'}
-            </span>
-          </>
-        ) : (
-          <p
-            style={{
-              fontStyle: 'italic',
-              textAlign: 'center',
-              color: '#999',
-              marginTop: '3rem',
-              fontSize: '1.1rem',
-            }}
-          >
-            No note selected
-          </p>
-        )}
-      </div>
-      <div
-        className="modal-footer"
-        style={{
-          borderTop: 'none',
-          justifyContent: 'center',
-          padding: '1rem',
-          backgroundColor: '#f0f0f0',
-        }}
-      >
-        <button
-          ref={refCloseView}
-          type="button"
-          className="btn btn-outline-primary px-4"
-          data-bs-dismiss="modal"
-          style={{
-            borderRadius: '50px',
-            fontWeight: '600',
-            letterSpacing: '0.07em',
-            boxShadow: '0 4px 8px rgb(37 117 252 / 0.3)',
-            transition: 'all 0.3s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = '#2575fc';
-            e.currentTarget.style.color = '#fff';
-            e.currentTarget.style.boxShadow = '0 6px 12px rgb(37 117 252 / 0.5)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = '';
-            e.currentTarget.style.color = '';
-            e.currentTarget.style.boxShadow = '0 4px 8px rgb(37 117 252 / 0.3)';
-          }}
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-      {/* Notes List */}
+      {/* Folder list */}
       <div className="row">
-        {(filteredNotes.length === 0 ? notes : filteredNotes).map((note) => (
-          <Noteitem
-            key={note._id}
-            note={note}
-            updateNote={updateNote}
-            showAlert={console.log}  // replace with your actual showAlert function if you have one
-            viewNote={viewNote}
-          />
+        {folders.map(folder => (
+          <div
+            key={folder.id}
+            className="col-md-4 mb-4"
+            onDrop={e => handleDropOnFolder(e, folder.id)}
+            onDragOver={handleDragOver}
+            style={{ border: '2px dashed #ccc', borderRadius: '8px', padding: '10px', minHeight: '200px', background: '#f9f9f9' }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              {editingFolder === folder.id ? (
+                <>
+                  <input
+                    type="text"
+                    className="form-control me-2"
+                    value={editingFolderName}
+                    onChange={e => setEditingFolderName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') renameFolder(folder.id); }}
+                    autoFocus
+                  />
+                  <button className="btn btn-success btn-sm" onClick={() => renameFolder(folder.id)}>Save</button>
+                  <button className="btn btn-secondary btn-sm ms-2" onClick={() => setEditingFolder(null)}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <h5>{folder.name}</h5>
+                  {folder.id !== 'folder-default' && (
+                    <div>
+                      <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => startRenameFolder(folder.id, folder.name)}>Rename</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => deleteFolder(folder.id)}>Delete</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Notes in folder */}
+            {folder.noteIds.length === 0 && <p className="text-muted">No notes in this folder.</p>}
+
+            {folder.noteIds.map(noteId => {
+              const note = getNoteById(noteId);
+              if (!note) return null;
+              return (
+                <div
+                  key={note._id}
+                  draggable
+                  onDragStart={e => handleDragStart(e, note._id)}
+                  style={{ marginBottom: '8px' }}
+                >
+                  <Noteitem
+                    note={note}
+                    updateNote={() => {}}
+                    showAlert={showAlert}
+                    viewNote={() => {}}
+                />
+                </div>
+              );
+            })}
+          </div>
         ))}
       </div>
     </div>

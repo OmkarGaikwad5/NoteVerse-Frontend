@@ -446,3 +446,64 @@ body.dark-mode .text-muted {
   font-size: 14px;
   line-height: 1.4;
 }
+
+.modal-content {
+  transition: all 0.3s ease-in-out;
+  border-radius: 1rem;
+}
+
+.form-control-lg {
+  border-radius: 0.6rem;
+  font-size: 1rem;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+}
+
+.btn-close {
+  filter: invert(0.5);
+}
+
+/* Modal styling for better aesthetics */
+.modal-content {
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.modal-header h5 {
+  font-weight: 600;
+}
+
+.modal-body input,
+.modal-body textarea {
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.modal-footer button {
+  min-width: 120px;
+}
+
+/* Optional light hover on buttons */
+.btn:hover {
+  opacity: 0.95;
+}
+
+/* Responsive text truncation for long titles/tags if needed */
+.truncate-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tag styling */
+.note-tag {
+  background-color: #d0f0fd;
+  color: #0275d8;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+}

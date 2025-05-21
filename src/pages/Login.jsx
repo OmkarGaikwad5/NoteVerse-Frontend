@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Login() {
+function Login({showAlert}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -32,10 +32,12 @@ function Login() {
       const data = await res.json();
       if (data.token) {
         localStorage.setItem("token", data.token);
+        showAlert("Login Successfull","success");
         push("/");
       }
     } catch (error) {
       setErrorMsg("Network error. Please try again.");
+      showAlert("Login Failed","danger");
     }
   };
 

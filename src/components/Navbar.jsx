@@ -21,7 +21,7 @@ function Navbar() {
 
     // Store the selected mode in localStorage
     localStorage.setItem('mode', mode);
-  }, [mode]);
+  }, [mode,navigate]);
 
   const toggleMode = () => {
     setMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -29,10 +29,11 @@ function Navbar() {
 
   const isDark = mode === 'dark';
 
-  const handleLogout = () => {
+  const handleLogout = ({showAlert}) => {
     localStorage.removeItem('token'); // Remove token on logout
-    setIsLoggedIn(false); // Update the state to reflect logout
+    setIsLoggedIn(false);
     navigate('/login'); // Redirect to the login page
+    showAlert("Logged Out Successfully","success"); // Update the state to reflect logout
   };
 
   return (
@@ -85,6 +86,7 @@ function Navbar() {
               placeholder="Search notes"
               aria-label="Search"
             />
+            <button className='btn btn-primary'>Search</button>
           </form>
 
           {/* Dark/Light Mode Toggle Switch */}

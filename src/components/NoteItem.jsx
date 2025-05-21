@@ -6,6 +6,7 @@ const Noteitem = ({ note, updateNote, showAlert, viewNote }) => {
 
   const handleDelete = () => {
     deleteNote(note._id);
+    showAlert("Note Deleted successfully", "success");
    
   };
 
@@ -40,7 +41,9 @@ const Noteitem = ({ note, updateNote, showAlert, viewNote }) => {
                 className="far fa-trash-alt text-danger mx-1" 
                 style={{ cursor: 'pointer', fontSize: '1.1rem' }} 
                 onClick={handleDelete}
+                
                 title="Delete note"
+                
               ></i>
             </div>
           </div>
