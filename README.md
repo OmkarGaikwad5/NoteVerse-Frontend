@@ -57,14 +57,14 @@ npm start  # or yarn start
 npm run build  # or yarn build
 ```
 
-## 🎯 Contributing
-Contributions are welcome! Follow these steps:
+## 🎯 Contributing  
+Contributions are welcome! Follow these steps:  
+1) Fork the repository  
+2) Create a new branch (`git checkout -b feature-name`)  
+3) Commit your changes (`git commit -m "Add feature"`)  
+4) Push to the branch (`git push origin feature-name`)  
+5) Open a Pull Request  
 
-1)Fork the repository
-2)Create a new branch (git checkout -b feature-name)
-3)Commit your changes (git commit -m "Add feature")
-4)Push to the branch (git push origin feature-name)
-5)Open a Pull Request
 
 ## 📄 License
 This project is licensed under the MIT License.
