@@ -5,29 +5,27 @@ NoteVerse Frontend is a responsive and modern React-based web application design
 ## 📌 Project Overview
 NoteVerse Frontend is a React-based single-page application designed for intuitive note-taking and folder-based organization. It features dynamic note creation, editing, and deletion with real-time UI updates, dark/light mode support, and seamless integration with a backend API for a full-stack note management experience.
 
-## 🚀 Features
+## 🚀 Features  
+1) ✅ User-friendly note-taking interface  
+2) 📁 Folder-based organization for notes  
+3) ✍️ Add, edit, delete, and view note  
+4) ⚛️ Real-time UI updates with React state and Context API  
+5) 🌗 Light and dark mode toggle for enhanced user experience  
+6) 🚨 Alert system for user feedback on actions  
+7) 📱 Responsive design for both desktop and mobile devices  
+8) 🔗 Integrated with backend API  
+9) 🪟 Modal-based note viewing and editing  
+10) 🖱️ Drag-and-drop support for organizing folders  
+11) 🔀 Route-based navigation using React Router DOM  
+12) 🔐 Secure token-based authentication handling  
 
-1)✅ User-friendly note-taking interface
-2)📁 Folder-based organization for notes
-3)✍️ Add, edit, delete, and view note
-4)⚛️ Real-time UI updates with React state and Context API
-5)🌗 Light and dark mode toggle for enhanced user experience
-6)🚨 Alert system for user feedback on actions
-7)📱 Responsive design for both desktop and mobile devices
-8)🔗 Integrated with backend API 
-9)🪟 Modal-based note viewing and editing
-10)🖱️ Drag-and-drop support for organizing folders
-11)🔀 Route-based navigation using React Router DOM
-12)🔐 Secure token-based authentication handling
-
-## 🛠️ Tech Stack
-
-**⚛️ React.js**(for building the user interface)
-**🎯 Context API** (for global state management)
-**🌐 React Router DOM** (for client-side routing)
-**💅 Bootstrap & Custom** CSS (for responsive styling)
-**🔗 Axios** (for making HTTP requests to the backend)
-**🧩 React Icons / FontAwesome** (for icons and UI elements)
+## 🛠️ Tech Stack  
+- ⚛️ React.js (for building the user interface)  
+- 🎯 Context API (for global state management)  
+- 🌐 React Router DOM (for client-side routing)  
+- 💅 Bootstrap & Custom CSS (for responsive styling)  
+- 🔗 Axios (for making HTTP requests to the backend)  
+- 🧩 React Icons / FontAwesome (for icons and UI elements)  
 
 
 
