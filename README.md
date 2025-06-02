@@ -7,18 +7,18 @@ NoteVerse Frontend is a React-based single-page application designed for intuiti
 
 ## 🚀 Features
 
-✅ User-friendly note-taking interface
-📁 Folder-based organization for notes
-✍️ Add, edit, delete, and view note
-⚛️ Real-time UI updates with React state and Context API
-🌗 Light and dark mode toggle for enhanced user experience
-🚨 Alert system for user feedback on actions
-📱 Responsive design for both desktop and mobile devices
-🔗 Integrated with backend API 
-🪟 Modal-based note viewing and editing
-🖱️ Drag-and-drop support for organizing folders
-🔀 Route-based navigation using React Router DOM
-🔐 Secure token-based authentication handling
+1)✅ User-friendly note-taking interface
+2)📁 Folder-based organization for notes
+3)✍️ Add, edit, delete, and view note
+4)⚛️ Real-time UI updates with React state and Context API
+5)🌗 Light and dark mode toggle for enhanced user experience
+6)🚨 Alert system for user feedback on actions
+7)📱 Responsive design for both desktop and mobile devices
+8)🔗 Integrated with backend API 
+9)🪟 Modal-based note viewing and editing
+10)🖱️ Drag-and-drop support for organizing folders
+11)🔀 Route-based navigation using React Router DOM
+12)🔐 Secure token-based authentication handling
 
 ## 🛠️ Tech Stack
 
