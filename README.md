@@ -1,12 +1,67 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# 📘 NoteVerse Frontend
+NoteVerse Frontend is a responsive and modern React-based web application designed for intuitive note-taking and organization. It supports folders, rich text input, drag-and-drop functionality, and seamless user interactions—all tailored for an elegant user experience.
 
-Currently, two official plugins are available:
+## 📌 Project Overview
+NoteVerse Frontend is a React-based single-page application designed for intuitive note-taking and folder-based organization. It features dynamic note creation, editing, and deletion with real-time UI updates, dark/light mode support, and seamless integration with a backend API for a full-stack note management experience.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## Expanding the ESLint configuration
+✅ User-friendly note-taking interface
+📁 Folder-based organization for notes
+✍️ Add, edit, delete, and view note
+⚛️ Real-time UI updates with React state and Context API
+🌗 Light and dark mode toggle for enhanced user experience
+🚨 Alert system for user feedback on actions
+📱 Responsive design for both desktop and mobile devices
+🔗 Integrated with backend API 
+🪟 Modal-based note viewing and editing
+🖱️ Drag-and-drop support for organizing folders
+🔀 Route-based navigation using React Router DOM
+🔐 Secure token-based authentication handling
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+**⚛️ React.js**(for building the user interface)
+**🎯 Context API** (for global state management)
+**🌐 React Router DOM** (for client-side routing)
+**💅 Bootstrap & Custom** CSS (for responsive styling)
+**🔗 Axios** (for making HTTP requests to the backend)
+**🧩 React Icons / FontAwesome** (for icons and UI elements)
+
+
+
+## 📦 Installation
+
+1) **📁 Clone the repository**
+
+```sh
+git clone https://github.com/your-username/noteverse-frontend.git
+cd noteverse-frontend
+```
+
+2) **📦 Install dependencies**
+```sh
+npm install
+```
+
+3) **⚙️ Set up environment variables**
+Create a .env file in the root directory and add:
+```sh
+REACT_APP_API_URL=http://localhost:5000/api
+
+## 🚀 Running The Server
+Start the development server:
+```sh
+npm start
+```
+
+## 🤝 Contributing
+Feel free to submit pull requests and open issues. Contributions are always welcome and appreciated!
+
+## 📝 License
+This project is licensed under the MIT License.
+
+## 🚀 Happy Coding with NoteVerse! 🗒️✨
+
+
