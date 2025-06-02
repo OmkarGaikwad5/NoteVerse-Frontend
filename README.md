@@ -47,6 +47,7 @@ npm install
 Create a .env file in the root directory and add:
 ```sh
 REACT_APP_API_URL=http://localhost:5000/api
+```
 
 ## 🚀 Running The Server
 Start the development server:
